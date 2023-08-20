@@ -62,7 +62,7 @@ function SearchForm(props) {
         <div className="card w-96 glass center ml-44 mt-5">
               <figure><img src="https://news.gtp.gr/wp-content/uploads/2018/10/Southwest-amadeus-aircraft-1.jpg" alt="car!"/></figure>
               <div className="card-body items-center text-center">
-             <h2 class="card-title ml-4">Uçuş Arama Uygulaması !</h2>
+             <h2 class="card-title ml-4">Uçuş Arama Uygulaması </h2>
              </div>
             <div className="relative mb-4">
                 <input
