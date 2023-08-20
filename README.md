@@ -1,4 +1,6 @@
 # Flight Search Application Documentation
+[Live Demo](https://amadesuscase.netlify.app/)
+
 ![Alt text](screenshot.png)
 ## Table of Contents
 
