@@ -14,3 +14,13 @@ h1 {
   font-size: 12px;
   margin-top: 5px;
 }
+.departureSuggestions {
+  display: none;
+}
+
+.departureSuggestions:hover {
+  display: block;
+}
+.loading{
+  text-align: center;
+}

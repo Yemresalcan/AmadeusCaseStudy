@@ -1,127 +1,50 @@
 import React, { useState } from 'react';
-import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import FlightItem from './FlightItem';
-
+import ErrorMessage from './ErrorNotification';
+import SearchForm from './SearchForm';
+import Loading from './LoadingAnimation';
+import { mockFlights } from './mockFlights';
 
 function SearchBox() {
+    // Arama ile ilgili state'ler
     const [departureAirport, setDepartureAirport] = useState('');
     const [arrivalAirport, setArrivalAirport] = useState('');
     const [departureDate, setDepartureDate] = useState(new Date());
     const [returnDate, setReturnDate] = useState(new Date());
     const [isOneWay, setIsOneWay] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
+
+    // Hata ve yüklenme durumu ile ilgili state'ler
     const [error, setError] = useState(null);
     const [errors, setErrors] = useState({});
-    const [sortOption, setSortOption] = useState(''); // Sıralama seçeneğini tutacak state
-    const [isLoading, setIsLoading] = useState(false); // Yükleniyor durumunu kontrol eden state
+    const [isLoading, setIsLoading] = useState(false);
 
+    // Sıralama ile ilgili state
+    const [sortOption, setSortOption] = useState('');
+
+    // Öneri ile ilgili state'ler
     const [departureSuggestions, setDepartureSuggestions] = useState([]);
     const [arrivalSuggestions, setArrivalSuggestions] = useState([]);
 
+    // Uzaklık hesaplaması
+    function haversineDistance(coords1, coords2) {
+        function toRad(value) {
+            return value * Math.PI / 180;
+        }
+        var R = 6371; // Dünya'nın yarıçapı km cinsinden
+        var dLat = toRad(coords2.lat - coords1.lat);
+        var dLng = toRad(coords2.lng - coords1.lng);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(coords1.lat)) * Math.cos(toRad(coords2.lat)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        var distance = R * c;
 
-    const mockFlights = [
-        {
-            id: 1,
-            departure: 'IST',
-            arrival: 'JFK',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Turkish Airlines',
-            price: 500
-        },
-        {
-            id: 2,
-            departure: 'LAX',
-            arrival: 'LHR',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'British Airways',
-            price: 650
-        },
-        {
-            id: 3,
-            departure: 'CDG',
-            arrival: 'SFO',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Air France',
-            price: 600
-        },
-        {
-            id: 4,
-            departure: 'SYD',
-            arrival: 'DXB',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Emirates',
-            price: 800
-        },
-        {
-            id: 5,
-            departure: 'SIN',
-            arrival: 'HND',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Singapore Airlines',
-            price: 450
-        },
-        {
-            id: 6,
-            departure: 'YYZ',
-            arrival: 'AMS',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'KLM',
-            price: 550
-        },
-        {
-            id: 7,
-            departure: 'MUC',
-            arrival: 'PEK',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Lufthansa',
-            price: 700
-        },
-        {
-            id: 8,
-            departure: 'ICN',
-            arrival: 'JNB',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Korean Air',
-            price: 750
-        },
-        {
-            id: 9,
-            departure: 'MAD',
-            arrival: 'GRU',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Iberia',
-            price: 650
-        },
-        {
-            id: 10,
-            departure: 'DEL',
-            arrival: 'MEL',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Qantas',
-            price: 900
-        },
-        {
-            id: 11,
-            departure: 'TEST',
-            arrival: 'TEST2',
-            departureDate: new Date().toISOString(),
-            returnDate: new Date().toISOString(),
-            airline: 'Korean Air',
-            price: 745
-        },
-    ];
+        return distance;
+    }
 
+    // Arama önerileri ile ilgili fonksiyonlar
     const uniqueAirports = [...new Set([...mockFlights.map(flight => flight.departure), ...mockFlights.map(flight => flight.arrival)])];
 
     const suggestDepartureAirports = (query) => {
@@ -137,6 +60,7 @@ function SearchBox() {
         setDepartureSuggestions(matchedAirports);
     };
 
+
     const suggestArrivalAirports = (query) => {
         if (!query) {
             setArrivalSuggestions([]);
@@ -150,7 +74,7 @@ function SearchBox() {
         setArrivalSuggestions(matchedAirports);
     };
 
-
+    // Uçuşları sıralama fonksiyonu
     const sortFlights = (flights) => {
         switch (sortOption) {
             case 'departureTime':
@@ -158,18 +82,20 @@ function SearchBox() {
             case 'arrivalTime':
                 return [...flights].sort((a, b) => new Date(a.returnDate) - new Date(b.returnDate));
             case 'flightDuration':
-                // Uçuş uzunluğunu hesaplamak için ek bilgilere ihtiyaç duyulabilir.
-                // Şimdilik bu seçeneği geçiyorum.
-                return flights;
+                return [...flights].sort((a, b) =>
+                    haversineDistance(a.departureCoords, a.arrivalCoords) - haversineDistance(b.departureCoords, b.arrivalCoords)
+                );
             case 'price':
                 return [...flights].sort((a, b) => a.price - b.price);
             default:
                 return flights;
         }
+
     };
+
     const sortedFlights = sortFlights(searchResults);
 
-
+    // Form doğrulama fonksiyonu
     const validate = () => {
         let tempErrors = {};
 
@@ -182,6 +108,8 @@ function SearchBox() {
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0; // Eğer hata yoksa true döner
     };
+
+    // Arama fonksiyonu
     const handleSearch = async () => {
         if (validate()) {
             setError(null); // Hata mesajını sıfırla
@@ -209,106 +137,74 @@ function SearchBox() {
             } finally {
                 setIsLoading(false); // Yükleniyor durumunu sonlandır
             }
+          
         }
     };
 
+
     return (
         <div className="search-box">
-            <form onSubmit={(e) => e.preventDefault()}>
-                {/* Sıralama seçenekleri */}
-                <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+            <SearchForm
+                departureAirport={departureAirport}
+                setDepartureAirport={setDepartureAirport}
+                arrivalAirport={arrivalAirport}
+                setArrivalAirport={setArrivalAirport}
+                departureDate={departureDate}
+                setDepartureDate={setDepartureDate}
+                returnDate={returnDate}
+                setReturnDate={setReturnDate}
+                isOneWay={isOneWay}
+                setIsOneWay={setIsOneWay}
+                handleSearch={handleSearch}
+                suggestDepartureAirports={suggestDepartureAirports}
+                suggestArrivalAirports={suggestArrivalAirports}
+                departureSuggestions={departureSuggestions}
+                arrivalSuggestions={arrivalSuggestions}
+                errors={errors}
+            />
+
+            {/* Sıralama seçenekleri */}
+            <div className="inline-block relative w-auto pl-4 ml-30">
+                <label  className="mr-7 text-2xl">Sırala: </label>
+                <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                    className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+                >
                     <option value="">Sırala...</option>
                     <option value="departureTime">Kalkış Saatine Göre</option>
                     <option value="arrivalTime">Varış Saatine Göre</option>
                     <option value="flightDuration">Uçuş Uzunluğuna Göre</option>
                     <option value="price">Fiyata Göre</option>
                 </select>
-
-                <input
-                    type="text"
-                    placeholder="Kalkış Havaalanı"
-                    value={departureAirport}
-                    onChange={(e) => {
-                        setDepartureAirport(e.target.value);
-                        suggestDepartureAirports(e.target.value);
-                    }}
-                />
-                {errors.departureAirport && <div className="error">{errors.departureAirport}</div>}
-                <div className="airport-suggestions">
-                    {departureSuggestions.map(airportCode => (
-                        <div
-                            key={airportCode}
-                            onClick={() => {
-                                setDepartureAirport(airportCode);
-                                setDepartureSuggestions([]); // Önerileri temizle
-                            }}
-                        >
-                            {airportCode}
-                        </div>
-                    ))}
+                <div class="pointer-events-none absolute inset-y-5 right-2 flex items-center px-2 py-7 text-gray-700">
+                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                 </div>
-                <input
-                    type="text"
-                    placeholder="Varış Havaalanı"
-                    value={arrivalAirport}
-                    onChange={(e) => {
-                        setArrivalAirport(e.target.value);
-                        suggestArrivalAirports(e.target.value);
-                    }}
-                />
-                {errors.arrivalAirport && <div className="error">{errors.arrivalAirport}</div>}
-                <div className="airport-suggestions">
-                    {arrivalSuggestions.map(airportCode => (
-                        <div
-                            key={airportCode}
-                            onClick={() => {
-                                setArrivalAirport(airportCode);
-                                setArrivalSuggestions([]); // Önerileri temizle
-                            }}
-                        >
-                            {airportCode}
-                        </div>
-                    ))}
-                </div>
-                <DatePicker
-                    selected={departureDate}
-                    onChange={(date) => setDepartureDate(date)}
-                    placeholderText="Kalkış Tarihi"
-                />
-                {errors.departureDate && <div className="error">{errors.departureDate}</div>}
+            </div>
 
-                <DatePicker
-                    selected={returnDate}
-                    onChange={(date) => setReturnDate(date)}
-                    placeholderText="Varış Tarihi"
-                    disabled={isOneWay}
-                />
-                {errors.returnDate && <div className="error">{errors.returnDate}</div>}
 
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={isOneWay}
-                        onChange={() => setIsOneWay(!isOneWay)}
-                    />
-                    Tek Yönlü Uçuş
-                </label>
 
-                <button onClick={handleSearch}>Ara</button>
-            </form>
             {/* Yükleniyor durumu */}
-            {isLoading && <div className="loading">Yükleniyor...</div>}
-            {error && <div className="error">{error}</div>}
+            {isLoading && <Loading />}
+            {error && <ErrorMessage message={error} />}
 
             {/* Arama sonuçlarını listeleme */}
-            <div className="flight-results">
-                {searchResults.map(flight => (
-                    <FlightItem key={flight.id} flight={flight} />
-                ))}
+            <div className="flight-results mt-4">
+                {sortedFlights.length > 0 ? (
+                    sortedFlights.map(flight => (
+                        <FlightItem
+                            key={flight.id}
+                            flight={flight}
+                            flightDuration={haversineDistance(flight.departureCoords, flight.arrivalCoords)}
+                        />
+                    ))
+                ) : (
+                    <p></p>
+                )}
             </div>
+
         </div>
     );
 }
-
 
 export default SearchBox;

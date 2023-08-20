@@ -1,11 +1,13 @@
 import React from 'react';
-import FlightItem from './FlightItem'; // FlightItem bileşenini import edin
+import FlightItem from './FlightItem';
 
 function FlightList({ flights }) {
     return (
-        <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {flights.map(flight => (
-                <FlightItem key={flight.id} flight={flight} /> // Her bir uçuş için FlightItem bileşenini kullanın
+                <div key={flight.id} className="bg-white p-4 rounded-lg shadow-md">
+                    <FlightItem flight={flight} />
+                </div>
             ))}
         </div>
     );
